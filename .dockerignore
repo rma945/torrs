@@ -1,0 +1,9 @@
+.git
+.gitignore
+.github/
+.idea
+
+*.md
+
+dist
+*.service
