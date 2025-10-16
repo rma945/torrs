@@ -4,12 +4,13 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
-	"torrsru/db"
 	"strings"
+	"torrsru/db"
+
+	"github.com/gin-gonic/gin"
 )
 
 func Search(c *gin.Context) {
@@ -21,14 +22,14 @@ func Search(c *gin.Context) {
 
 	trs, err := db.Search(query)
 	if err != nil {
-		log.Println("Error get from db list:", err)
+		slog.Error("Failed to get from db list", "err", err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
 
 	buf, err := json.Marshal(trs)
 	if err != nil {
-		log.Println("Error marshal torr list:", err)
+		slog.Error("Error marshal torr list", "err", err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}

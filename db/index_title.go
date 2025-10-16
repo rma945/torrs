@@ -3,13 +3,14 @@ package db
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/blevesearch/bleve"
-	bolt "go.etcd.io/bbolt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"torrsru/global"
 	"torrsru/models/fdb"
+
+	"github.com/blevesearch/bleve"
+	bolt "go.etcd.io/bbolt"
 )
 
 var (
@@ -46,7 +47,7 @@ func RebuildIndex() error {
 		err := torrsB.ForEach(func(uniTorr, _ []byte) error {
 			torrB := torrsB.Bucket(uniTorr)
 			if torrB == nil {
-				return fmt.Errorf("Error in db struct")
+				return fmt.Errorf("error in db struct")
 			}
 
 			title := string(torrB.Get([]byte("title")))
@@ -58,7 +59,7 @@ func RebuildIndex() error {
 						return err
 					}
 					indexedTorrents += batch.Size()
-					log.Println("Indexed torrents:", indexedTorrents)
+					slog.Info(fmt.Sprintf("Indexed torrents: %d", indexedTorrents))
 					batch = indexTorrentTitle.NewBatch()
 				} else {
 					err := batch.Index(hex.EncodeToString(uniTorr), title)
@@ -75,7 +76,7 @@ func RebuildIndex() error {
 				return err
 			}
 			indexedTorrents += batch.Size()
-			log.Println("Indexed torrents:", indexedTorrents)
+			slog.Info(fmt.Sprintf("Indexed torrents: %d", indexedTorrents))
 		}
 		return err
 	})

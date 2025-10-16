@@ -3,8 +3,9 @@ package db
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"runtime"
 	"strconv"
 	"strings"
@@ -27,7 +28,7 @@ func StartSync() {
 }
 
 func syncDB() {
-	log.Println("Starting datbase sync from:", global.DBHost)
+	slog.Info(fmt.Sprintf("Starting datbase sync from: %s", global.DBHost))
 
 	mu.Lock()
 	if isSync {
@@ -44,12 +45,11 @@ func syncDB() {
 	gcCount := 0
 	for {
 		ftstr := strconv.FormatInt(filetime, 10)
-		t := time.Unix(ft2sec(filetime), 0)
-		log.Println("Fetch:", t.Format("2006-01-02 15:04:05"))
+		slog.Info("Start fetching data")
 		resp, err := http.Get(global.DBHost + "/sync/fdb/torrents?time=" + ftstr)
 		if err != nil {
-			log.Printf("Error connect to fdb(%s): %s\n", global.DBHost, err)
-			log.Printf("Waiting %d minutes before retrying...\n", global.DBSyncRetry)
+			slog.Error(fmt.Sprintf("Failed connect to fdb: %s", global.DBHost), "err", err)
+			slog.Info(fmt.Sprintf("Waiting %d minutes before retry...", global.DBSyncRetry))
 			time.Sleep(time.Minute * time.Duration(global.DBSync))
 			continue
 		}
@@ -57,14 +57,16 @@ func syncDB() {
 		var js *fdb.FDBRequest
 		err = json.NewDecoder(resp.Body).Decode(&js)
 		if err != nil {
-			log.Fatal("Error decode json:", err)
+			slog.Error("Failed to decode json", "err", err)
+			os.Exit(1)
 			return
 		}
 		resp.Body.Close()
 
 		err = saveTorrents(js.Collections)
 		if err != nil {
-			log.Fatal("Error save torrents:", err)
+			slog.Error("Failed to save torrents", "err", err)
+			os.Exit(1)
 			return
 		}
 
@@ -78,12 +80,12 @@ func syncDB() {
 
 		err = SetFileTime(filetime)
 		if err != nil {
-			log.Fatal("Error set ftime:", err)
+			slog.Error("Failed to set time", "err", err)
+			os.Exit(1)
 			return
 		}
 
-		t = time.Unix(ft2sec(filetime), 0)
-		log.Println("Save:", t.Format("2006-01-02 15:04:05"), ", Torrents:", torrents)
+		slog.Info(fmt.Sprintf("Saving data, found torrents: %d", torrents))
 
 		if !js.Nextread {
 			break
@@ -96,7 +98,7 @@ func syncDB() {
 		}
 	}
 
-	fmt.Println("End sync", time.Since(start))
+	slog.Info(fmt.Sprintf("End sync %s", time.Since(start)))
 }
 
 func getHash(magnet string) string {

@@ -3,7 +3,7 @@ package web
 import (
 	"embed"
 	"html/template"
-	"log"
+	"log/slog"
 	"strings"
 	ss "sync"
 	"time"
@@ -40,7 +40,7 @@ func Start(port string) {
 
 	err := global.Route.Run(":" + port)
 	if err != nil {
-		log.Println("Error start server:", err)
+		slog.Error("Failed to start server:", "err", err)
 	}
 
 	global.Stopped = true

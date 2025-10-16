@@ -3,7 +3,7 @@ package gincert
 import (
 	"context"
 	"crypto/tls"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"golang.org/x/crypto/acme/autocert"
@@ -64,10 +64,10 @@ func RunWithManager(r http.Handler, m *autocert.Manager) error {
 func RunWithManagerAndTLSConfig(r http.Handler, m *autocert.Manager, tlsc *tls.Config) error {
 	var g errgroup.Group
 	if m.Cache == nil {
-		var e error
-		m.Cache, e = getCacheDir()
-		if e != nil {
-			log.Println(e)
+		var err error
+		m.Cache, err = getCacheDir()
+		if err != nil {
+			slog.Error("Failed to get TLS certs cache dir", "err", err)
 		}
 	}
 	defaultTLSConfig := m.TLSConfig()

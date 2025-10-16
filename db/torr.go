@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	bolt "go.etcd.io/bbolt"
 	"torrsru/db/utils"
 	"torrsru/models/fdb"
+
+	bolt "go.etcd.io/bbolt"
 )
 
 func saveTorrent(parent *bolt.Bucket, torr *fdb.Torrent) error {
