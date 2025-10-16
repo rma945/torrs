@@ -1,9 +1,11 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"torrsru/db"
 	"torrsru/global"
 	"torrsru/tgbot"
@@ -12,8 +14,28 @@ import (
 	"github.com/alexflint/go-arg"
 )
 
+func initLogger(level string) *slog.Logger {
+	loggerLogLevel := slog.LevelInfo
+
+	switch strings.ToLower(level) {
+	case "debug":
+		loggerLogLevel = slog.LevelDebug
+	case "info":
+		loggerLogLevel = slog.LevelInfo
+	case "warn":
+		loggerLogLevel = slog.LevelWarn
+	case "error":
+		loggerLogLevel = slog.LevelError
+	default:
+		loggerLogLevel = slog.LevelInfo
+	}
+
+	return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: loggerLogLevel}))
+}
+
 func main() {
 	var args struct {
+		LogLevel     string `default:"info" arg:"--log-level,env:LOG_LEVEL" help:"log level (debug,info,warn,error)"`
 		RebuildIndex bool   `default:"false" arg:"-r" help:"rebuild index and exit"`
 		TMDBProxy    bool   `default:"false" arg:"--tmdb,env:TMDB_PROXY" help:"proxy for TMDB"`
 		Port         string `default:"8094" arg:"-p,env:PORT" help:"port for http"`
@@ -26,6 +48,7 @@ func main() {
 		DBSyncRetry  int    `default:"10" arg:"--db-sync-retry,env:DB_SYNC_RETRY" help:"External database sync retry"`
 	}
 	arg.MustParse(&args)
+	slog.SetDefault(initLogger(args.LogLevel))
 
 	if args.DBPath != "" {
 		global.PWD = args.DBPath
@@ -34,7 +57,7 @@ func main() {
 		pwd, _ = filepath.Abs(pwd)
 		global.PWD = pwd
 	}
-	log.Println("Database bath set to:", global.PWD)
+	slog.Info(fmt.Sprintf("Database path set to: %s", global.PWD))
 
 	global.TMDBProxy = args.TMDBProxy
 	global.TSHost = args.TSHost
@@ -48,21 +71,22 @@ func main() {
 	if args.RebuildIndex {
 		err := db.RebuildIndex()
 		if err != nil {
-			log.Println("Rebuild index error:", err)
+			slog.Error("Rebuild index error:", "err", err)
+			os.Exit(1)
 		} else {
-			log.Println("Rebuild index success")
+			slog.Info("Rebuild index success")
 		}
 		return
 	}
 
 	if args.TGBotToken != "" {
 		if args.TGHost == "" {
-			log.Println("Error telegram host is empty. Telegram api bot need for upload 2gb files")
+			slog.Error("Telegram host is empty. Telegram api bot need for upload 2gb files")
 			os.Exit(1)
 		}
 		err := tgbot.Start(args.TGBotToken, args.TGHost)
 		if err != nil {
-			log.Println("Start Telegram bot error:", err)
+			slog.Error("Start Telegram bot error:", "err", err)
 			os.Exit(1)
 		}
 	}

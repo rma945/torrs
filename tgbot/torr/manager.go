@@ -3,8 +3,7 @@ package torr
 import (
 	"errors"
 	"fmt"
-	tele "gopkg.in/telebot.v4"
-	"log"
+	"log/slog"
 	"math"
 	"path/filepath"
 	"strconv"
@@ -12,6 +11,8 @@ import (
 	"time"
 	"torrsru/db"
 	"torrsru/tgbot/torr/state"
+
+	tele "gopkg.in/telebot.v4"
 )
 
 type Worker struct {
@@ -60,12 +61,12 @@ func (m *Manager) AddRange(c tele.Context, hash string, from, to int) {
 		if err == nil {
 			break
 		} else {
-			log.Println("Error send msg, try again:", i+1, "/", 20)
+			slog.Warn(fmt.Sprintf("Failed to send msg, try again: %d/%d", i+1, 20))
 		}
 	}
 
 	if err != nil {
-		log.Println("Error send msg:", err)
+		slog.Error("Failed to send msg", "err", err)
 		return
 	}
 
@@ -237,7 +238,7 @@ func uploadFile(wrk *Worker, file *state.TorrentFileStat, fi, fc int) error {
 		if err == nil || errors.Is(err, ERR_STOPPED) {
 			break
 		} else {
-			log.Println("Error send msg, try again:", i+1, "/", 20)
+			slog.Warn(fmt.Sprintf("Failed to send msg, try again: %d/%d", i+1, 20))
 		}
 	}
 
@@ -247,7 +248,7 @@ func uploadFile(wrk *Worker, file *state.TorrentFileStat, fi, fc int) error {
 	if errors.Is(err, ERR_STOPPED) {
 		err = nil
 	} else if err != nil {
-		log.Println("Error send message:", err)
+		slog.Error("Failed to send message:", "err", err)
 	} else {
 		db.SaveTGFileID(wrk.torrentHash+"|"+strconv.Itoa(file.Id), d.FileID)
 	}

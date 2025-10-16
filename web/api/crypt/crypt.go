@@ -4,13 +4,13 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
-	"log"
+	"log/slog"
 )
 
 func GetKeyPair() *rsa.PrivateKey {
 	key, err := rsa.GenerateKey(rand.Reader, 512)
 	if err != nil {
-		log.Println("Error get key pair", err)
+		slog.Error("Failed to get key pair", "err", err)
 	}
 	return key
 }
@@ -23,7 +23,7 @@ func Decrypt(key *rsa.PrivateKey, data string) string {
 			return string(textBytes)
 		}
 	}
-	log.Println("Error decrypt data", err)
+	slog.Error("Failed to decrypt data", "err", err)
 	return ""
 }
 
@@ -32,6 +32,6 @@ func Encrypt(key *rsa.PublicKey, data string) string {
 	if err == nil {
 		return base64.StdEncoding.EncodeToString(cryptBytes)
 	}
-	log.Println("Error encrypt data", err)
+	slog.Error("Failed to encrypt data", "err", err)
 	return ""
 }

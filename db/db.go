@@ -3,13 +3,15 @@ package db
 import (
 	"encoding/binary"
 	"encoding/hex"
-	bolt "go.etcd.io/bbolt"
-	"log"
+	"fmt"
+	"log/slog"
 	"path/filepath"
 	"regexp"
 	"time"
 	"torrsru/global"
 	"torrsru/models/fdb"
+
+	bolt "go.etcd.io/bbolt"
 )
 
 var (
@@ -20,14 +22,14 @@ var (
 func Init() {
 	d, err := bolt.Open(filepath.Join(global.PWD, "torrents.db"), 0o666, &bolt.Options{Timeout: 5 * time.Second})
 	if err != nil {
-		log.Fatalln("Error open db", err)
+		slog.Error(fmt.Sprintf("Failed to open torrents.db at: %s", global.PWD), "err", err)
 		return
 	}
 	db = d
 
 	err = initIndex()
 	if err != nil {
-		log.Fatalln("Error open indexTorrentTitle", err)
+		slog.Error(fmt.Sprintf("Failed to open index.db at: %s", global.PWD), "err", err)
 		return
 	}
 }
@@ -46,7 +48,7 @@ func GetFileTime() int64 {
 		return nil
 	})
 	if err != nil {
-		log.Println("Error get from db:", err)
+		slog.Error("Failed to get data from torrents.db:", "err", err)
 	}
 	return ft
 }

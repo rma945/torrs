@@ -2,19 +2,20 @@ package tgbot
 
 import (
 	"errors"
-	"fmt"
-	"github.com/dustin/go-humanize"
-	tele "gopkg.in/telebot.v4"
+	"log/slog"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"torrsru/tgbot/torr"
+
+	"github.com/dustin/go-humanize"
+	tele "gopkg.in/telebot.v4"
 )
 
 func infoTorrent(c tele.Context, magnet string) error {
 	msg, err := c.Bot().Send(c.Recipient(), "Подключение к торренту: <code>"+magnet+"</code>")
 	if err != nil {
-		fmt.Println("Error send to telegram:", err)
+		slog.Error("Failed send to telegram:", "err", err)
 		return err
 	}
 	ti, err := torr.GetTorrentInfo(magnet)
